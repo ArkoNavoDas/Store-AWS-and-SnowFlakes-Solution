@@ -1,0 +1,90 @@
+Group 1
+Arko Navo Das
+
+
+--
+create or replace table "SUPERSTORE"."STORESCHEMA"."STORE"
+("Sr"Integer,
+  "Order ID"String,	
+  "Order Date"String,	
+  "Ship Date"String,	
+  "Ship Mode"String,
+  "Customer ID"String,
+  "Customer Name"String,	
+  "Segment"String,
+  "Country"String,	
+  "City"String,	
+  "State"String,	
+  "Postal Code"Integer,	
+  "Region"String,	
+  "Product ID"String,	
+  "Category"String,	
+  "Sub-Category"String,	
+  "Product Name"String,	
+  "Sales"Double,	
+  "Quantity"Integer,	
+  "Discount"Double,	
+  "Profit"Integer
+);
+
+
+ select * from "SUPERSTORE"."STORESCHEMA"."STORE";
+
+
+--Backup
+
+CREATE or REPLACE TABLE "SUPERSTORE"."STORESCHEMA"."STOREBACKUP" 
+("Sr"Integer,
+  "Order ID"String,	
+  "Order Date"String,	
+  "Ship Date"String,	
+  "Ship Mode"String,
+  "Customer ID"String,
+  "Customer Name"String,	
+  "Segment"String,
+  "Country"String,	
+  "City"String,	
+  "State"String,	
+  "Postal Code"Integer,	
+  "Region"String,	
+  "Product ID"String,	
+  "Category"String,	
+  "Sub-Category"String,	
+  "Product Name"String,	
+  "Sales"Double,	
+  "Quantity"Integer,	
+  "Discount"Double,	
+  "Profit"Integer
+);
+
+
+Insert into "STOREBACKUP" select * from "STORE";
+ 
+ -----------------------
+ create or replace stream  
+"STORESTREAM" on table "STORE"
+append_only=true;
+
+----------------------------
+CREATE OR REPLACE TASK "STORETask"
+    WAREHOUSE = "COMPUTE_WH"
+    SCHEDULE = 'USING CRON 0 0 * * 5 Asia/Kolkata'  
+    when
+    system$stream_has_data('STORESTREAM')
+  as
+    insert into "STORE" select * from "STORESTREAM";
+
+
+
+ -------------
+ Select count(*) as "Number of Orders whose Ship Mode is Second Class"  from "STORE" where "Ship Mode"='Second Class';
+ -------------
+ Select "Customer ID","Customer Name","Sales","Country" from "STORE" where "Sales" in (Select max("Sales") from "STORE" group by "Country");
+ -------------
+ Select sum("Sales") as "Total Sales for Category ‘Furniture" from "STORE" where "Category" ='Furniture';
+ -------------
+ Select "Product Name"  from "STORE" where "Profit"= (Select max("Profit") from "STORE");
+ -------------
+ Select "Category", sum("Profit") from "STORE" where "Country" in (Select distinct "Country" from "STORE") group by "Category" ;
+ -------------
+ Select Top 1 "Region", abs(sum("Profit")) as "Loss" from "STORE" where "Profit" < 0  group by "Region" order by sum("Profit") asc;
